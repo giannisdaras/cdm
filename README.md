@@ -37,7 +37,7 @@ Theoretically, we show that if the score is learned perfectly on some non-drifte
 | EDM-VP (reported)  |             |       |       |       |       |       |       | 1.97  |
 | EDM-VE (reported)  |             |       |       |       |       |       |       | 1.98  |
 | NCSNv3-VP (reported) |             |       |       |       |       |       |       | 3.01  |
-| NCSNv3-VE (reported) |             |       |       |      
+| NCSNv3-VE (reported) |             |       |       |       |       |       |       | 3.77 |
 
 
 
