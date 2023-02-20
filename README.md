@@ -72,7 +72,20 @@ In what follows, we provide the instructions on how to use this code directly fr
 
 ## Pre-trained models
 
-To be released soon.
+The pre-trained models for CIFAR-10, AFHQ and FFHQ can be found [here](https://drive.google.com/drive/folders/1J3ssNlHRGfL5s80snDgBbiRN_IdBxeCU).
+
+Each folder contains two sub-folders: edm and cdm. The latter models are trained with consistency regularization. We provide checkpoints for different number of training iterations.
+
+## Getting started
+
+First, download the pre-trained models from the link above. Next, run the following command:
+
+```.bash
+python example.py --num_steps=18 --model_path=MODEL_PATH --output_path=OUTPUT_PATH
+```
+
+This is a minimal standalone script that loads a pre-trained model and generates a random 8x8 grid of images. For AFHQ, FFHQ use 40 steps, for CIFAR-10 18 steps.
+
 
 ## Calculating FID
 
@@ -156,7 +169,7 @@ The following table lists the exact training configurations that we used and ref
 | :-- | :-- | :-- | :--
 | <sub>cifar10&#8209;32x32&#8209;cond&#8209;vp</sub>   | <sub>8xV100</sub>  | <sub>~3&nbsp;days</sub>  | <sub>`--cond=1 --arch=ddpmpp`</sub>
 | <sub>cifar10&#8209;32x32&#8209;uncond&#8209;vp</sub> | <sub>8xV100</sub>  | <sub>~3&nbsp;days</sub>  | <sub>`--cond=0 --arch=ddpmpp`</sub>
-| <sub>afhqv2&#8209;64x64&#8209;uncond&#8209;vp</sub>  | <sub>8xV100</sub>  | <sub>~6&nbsp;days</sub>  | <sub>`--cond=0 --arch=ddpmpp --batch=256 --cres=1,2,2,2 --lr=2e-4 --dropout=0.25 --augment=0.15`</sub> 
+| <sub>afhqv2&#8209;64x64&#8209;uncond&#8209;vp</sub>  | <sub>8xV100</sub>  | <sub>~6&nbsp;days</sub>  | <sub>`--cond=0 --arch=ddpmpp --batch=128 --cres=1,2,2,2 --lr=2e-4 --dropout=0.25 --augment=0.15`</sub> 
 
 We note that our consistency regularization increases the training time by a factor of $\approx \times1.5$ using the default configuration compared to the `edm` baseline.
 

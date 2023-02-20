@@ -15,6 +15,10 @@ import torch
 import PIL.Image
 import dnnlib
 import matplotlib.pyplot as plt
+import click
+
+
+
 #----------------------------------------------------------------------------
 
 def stochastic_sampler(net, x_cur, class_labels, S_churn, S_min, S_max, S_noise, num_steps, t_cur, t_next, i):
@@ -111,9 +115,16 @@ def generate_image_grid(
 
 #----------------------------------------------------------------------------
 
-def main():
-    model_root = 'https://nvlabs-fi-cdn.nvidia.com/edm/pretrained'
-    generate_image_grid(f'{model_root}/edm-cifar10-32x32-cond-vp.pkl',   'cifar10-32x32.png',  num_steps=18) # FID = 1.79, NFE = 35
+
+@click.command()
+
+# Main options.
+@click.option('--model_path',        help='Path to pre-trained model (pkl file)', metavar='DIR', type=str, required=True)
+@click.option('--output_path',        help='Path for output file.', metavar='DIR', type=str, required=True)
+@click.option('--steps', 'num_steps',      help='Number of sampling steps', metavar='INT',                          type=click.IntRange(min=1), default=18, show_default=True)
+
+def main(model_path, output_path, num_steps):
+    generate_image_grid(model_path,   output_path,  num_steps=num_steps)
 
 
 #----------------------------------------------------------------------------
