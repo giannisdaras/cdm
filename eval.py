@@ -1,4 +1,4 @@
-"""Single evaluation file (for generating and measuring Inception/FID)"""
+"""Single evaluation file (for generating and measuring Inception/FID."""
 import os
 import re
 import click
