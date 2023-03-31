@@ -19,6 +19,7 @@ import dnnlib
 from torch_utils import distributed as dist
 from torch_utils import training_stats
 from torch_utils import misc
+import wandb
 
 #----------------------------------------------------------------------------
 
@@ -113,7 +114,9 @@ def training_loop(
     dist.print0(f'Training for {total_kimg} kimg...')
     dist.print0()
     cur_nimg = resume_kimg * 1000
-    cur_tick = 0
+    cur_tick = resume_kimg // kimg_per_tick
+    dist.print0(f"Starting from tick: {cur_tick}")
+    dist.print0(f'Starting wandb step: {cur_tick * snapshot_ticks}')
     tick_start_nimg = cur_nimg
     tick_start_time = time.time()
     maintenance_time = tick_start_time - start_time
@@ -200,6 +203,9 @@ def training_loop(
                 stats_jsonl = open(os.path.join(run_dir, 'stats.jsonl'), 'at')
             stats_jsonl.write(json.dumps(dict(training_stats.default_collector.as_dict(), timestamp=time.time())) + '\n')
             stats_jsonl.flush()
+            # report to wandb
+            for key, value in training_stats.default_collector.as_dict().items():
+                wandb.log({key: value}, step=cur_tick * snapshot_ticks)
         dist.update_progress(cur_nimg // 1000, total_kimg)
 
         # Update state.

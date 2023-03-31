@@ -16,7 +16,7 @@ import torch
 import dnnlib
 from torch_utils import distributed as dist
 from training import training_loop
-
+import wandb
 import warnings
 warnings.filterwarnings('ignore', 'Grad strides do not match bucket view strides') # False warning printed by PyTorch 1.12.
 
@@ -88,7 +88,10 @@ def parse_int_list(s):
 @click.option('--seed',          help='Random seed  [default: random]', metavar='INT',              type=int)
 @click.option('--transfer',      help='Transfer learning from network pickle', metavar='PKL|URL',   type=str)
 @click.option('--resume',        help='Resume from previous training state', metavar='PT',          type=str)
+@click.option('--wandb_id', help='Id of wandb run to resume', type=str, default='')
 @click.option('-n', '--dry-run', help='Print training options and exit',                            is_flag=True)
+
+@click.option('--experiment_name', help='Name for the experiment to run', type=str, default=None, required=False, show_default=True)
 
 def main(**kwargs):
     """Train diffusion-based generative model using the techniques described in the
@@ -104,6 +107,17 @@ def main(**kwargs):
     opts = dnnlib.EasyDict(kwargs)
     torch.multiprocessing.set_start_method('spawn')
     dist.init()
+
+
+    if dist.get_rank() == 0:
+        wandb.init(
+            project="cdm",
+            config=kwargs,
+            name=opts.experiment_name,
+            id=opts.wandb_id if opts.resume is not None else '',
+            resume="must" if opts.resume is not None else False
+        )
+
 
     # Initialize config dict.
     c = dnnlib.EasyDict()
