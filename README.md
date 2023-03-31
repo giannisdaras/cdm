@@ -22,10 +22,10 @@ Theoretically, we show that if the score is learned perfectly on some non-drifte
 |---------------------|-------------|-------|-------|-------|-------|-------|-------|-------|
 | **CDM-VP (Ours)**      | AFHQ        | **3.00** | 2.44  | **2.30** | **2.31** | **2.25** | **2.44** | 2.21  |
 | EDM-VP (retrained) |             | 3.27  | **2.41** | 2.61  | 2.43  | 2.29  | 2.61  | 2.26  |
-| EDM-VP (reported)$^*$ |             |       |       |       |       |       |       | **1.96** |
-| EDM-VE (reported)$^*$ |             |       |       |       |       |       |       | 2.16  |
-| NCSNv3-VP (reported)$^*$ |             |       |       |       |       |       |       | 2.58  |
-| NCSNv3-VE (reported)$^*$ |             |       |       |       |       |       |       | 18.52 |
+| EDM-VP (reported) |             |       |       |       |       |       |       | **1.96** |
+| EDM-VE (reported) |             |       |       |       |       |       |       | 2.16  |
+| NCSNv3-VP (reported) |             |       |       |       |       |       |       | 2.58  |
+| NCSNv3-VE (reported) |             |       |       |       |       |       |       | 18.52 |
 | **CDM-VP (Ours)**      | CIFAR10 (cond.) | **2.44** | **1.94** | **1.88** | 1.88  | **1.80** | **1.82** | **1.77** |
 | EDM-VP (retrained) |             | 2.50  | 1.99  | 1.94  | **1.85** | 1.86  | 1.90  | 1.82  |
 | EDM-VP (reported)  |             |       |       |       |       |       |       | 1.79  |
