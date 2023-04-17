@@ -154,6 +154,10 @@ def parse_int_list(s):
 @click.option('--num', 'num_expected',  help='Number of images to use', metavar='INT',              type=click.IntRange(min=2), default=50000, show_default=True)
 @click.option('--seed',                 help='Random seed for selecting the images', metavar='INT', type=int, default=0, show_default=True)
 
+
+@click.option('--inpainting_image_path', help='Path to the image to inpaint', type=str, default='')
+@click.option('--corruption_probability', help='Probability of corruption', type=float, default=0.8)
+
 @click.option('--steps', 'num_steps',      help='Number of sampling steps', metavar='INT',                          type=click.IntRange(min=1), default=18, show_default=True)
 @click.option('--sigma_min',               help='Lowest noise level  [default: varies]', metavar='FLOAT',           type=click.FloatRange(min=0))
 @click.option('--sigma_max',               help='Highest noise level  [default: varies]', metavar='FLOAT',          type=click.FloatRange(min=0))
@@ -169,14 +173,27 @@ def parse_int_list(s):
 @click.option('--scaling',                 help='Ablate signal scaling s(t)', metavar='vp|none',                    type=click.Choice(['vp', 'none']))
 
 
+
+
 def main(network_loc, outdir, subdirs, seeds, class_idx, max_batch_size,
-    experiment_name, wandb_id, ref_path, num_expected, seed, device=torch.device('cuda'), **sampler_kwargs):
+    experiment_name, wandb_id, ref_path, num_expected, seed, inpainting_image_path='', corruption_probability=0.54,
+    device=torch.device('cuda'), **sampler_kwargs):
     torch.multiprocessing.set_start_method('spawn')
     dist.init()
     # we want to make sure that each gpu does not get more than batch size.
     # Hence, the following measures how many batches are going to be per GPU.
     num_batches = ((len(seeds) - 1) // (max_batch_size * dist.get_world_size()) + 1) * dist.get_world_size()
-    
+
+    if inpainting_image_path:
+        # read image from disk
+        image = PIL.Image.open(inpainting_image_path)
+        # convert it to tensor and crate inpainting mask
+        image = (torch.tensor(np.array(image), device=device, dtype=torch.float32) / 255.0) * 2 - 1
+        mask = torch.rand(image.shape[1:], device=device) > corruption_probability
+        mask = mask.unsqueeze(0).repeat(image.shape[0], 1, 1).to(torch.float32)
+        masked_image = image * mask
+        masked_image = torch.unsqueeze(masked_image, 0).permute(0, 3, 1, 2)
+        mask = torch.unsqueeze(mask, 0).permute(0, 3, 1, 2)
 
     dist.print0(f"The algorithm will run for {num_batches} batches --  {len(seeds)} images of batch size {max_batch_size}")
     all_batches = torch.as_tensor(seeds).tensor_split(num_batches)
@@ -255,7 +272,10 @@ def main(network_loc, outdir, subdirs, seeds, class_idx, max_batch_size,
                 # Generate images.
                 sampler_kwargs = {key: value for key, value in sampler_kwargs.items() if value is not None}
                 dist.print0(f"Running the sampler")
-                images = sampler(net, latents, class_labels, randn_like=rnd.randn_like, sampler_seed=batch_seeds, **sampler_kwargs)
+                if inpainting_image_path and corruption_probability > 0:
+                    images = inpainting_sampler(net, masked_image, mask, latents, class_labels, randn_like=rnd.randn_like, sampler_seed=batch_seeds, **sampler_kwargs)
+                else:
+                    images = sampler(net, latents, class_labels, randn_like=rnd.randn_like, sampler_seed=batch_seeds, **sampler_kwargs)
                 dist.print0(f"Got the images, saving them!")
                 # Save images.
                 images_np = (images * 127.5 + 128).clip(0, 255).to(torch.uint8).permute(0, 2, 3, 1).cpu().numpy()
@@ -279,7 +299,8 @@ def main(network_loc, outdir, subdirs, seeds, class_idx, max_batch_size,
             if dist.get_rank() != 0:
                 torch.distributed.barrier()
 
-            calc(os.path.join(outdir, str(checkpoint_number)), ref_path, num_expected, seed, max_batch_size, image_size=image_np.shape[-2])
+            if not inpainting_image_path:
+                calc(os.path.join(outdir, str(checkpoint_number)), ref_path, num_expected, seed, max_batch_size, image_size=image_np.shape[-2])
             torch.distributed.barrier() 
             eval_index += 1
             dist.print0('Done.')
