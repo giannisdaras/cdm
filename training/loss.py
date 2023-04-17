@@ -13,6 +13,7 @@ from torch_utils import persistence
 from torch_utils.misc import edm_schedule, save_image
 import numpy as np
 from training.samplers import backward_sde_sampler
+from random import random
 
 #----------------------------------------------------------------------------
 # Loss function corresponding to the variance preserving (VP) formulation
@@ -67,10 +68,11 @@ class VELoss:
 
 @persistence.persistent_class
 class EDMLoss:
-    def __init__(self, P_mean=-1.2, P_std=1.2, sigma_data=0.5):
+    def __init__(self, P_mean=-1.2, P_std=1.2, sigma_data=0.5, self_cond=False):
         self.P_mean = P_mean
         self.P_std = P_std
         self.sigma_data = sigma_data
+        self.self_cond = self_cond
 
     def __call__(self, net, images, labels=None, augment_pipe=None):
         rnd_normal = torch.randn([images.shape[0], 1, 1, 1], device=images.device)
@@ -78,7 +80,18 @@ class EDMLoss:
         weight = (sigma ** 2 + self.sigma_data ** 2) / (sigma * self.sigma_data) ** 2
         y, augment_labels = augment_pipe(images) if augment_pipe is not None else (images, None)
         n = torch.randn_like(y) * sigma
-        D_yn = net(y + n, sigma, labels, augment_labels=augment_labels)
+
+
+        if self.self_cond and random() < 0.5:
+            with torch.no_grad():
+                cat_input = torch.cat([y + n, torch.zeros_like(y)], axis=1)
+                denoised = net(cat_input, sigma, labels, augment_labels=augment_labels)[:, :3]
+                denoised = denoised.detach()
+        else:
+            denoised = torch.zeros_like(y + n)
+        
+        D_yn = net(torch.cat([y + n, denoised], axis=1), sigma, labels, augment_labels=augment_labels)[:, :3]
+
         loss = weight * ((D_yn - y) ** 2)
         return loss
 

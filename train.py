@@ -69,6 +69,8 @@ def parse_int_list(s):
 @click.option('--martingale_lambda',  help='Coefficient for martingale term.', metavar='FLOAT',                       type=click.FloatRange(min=0), default=10.0, show_default=True)
 @click.option('--martingale_steps',  help='Number of steps to run backward sampler for.', metavar='INT',                       type=click.IntRange(min=0), default=6, show_default=True)
 
+@click.option('--self_cond',         help='Enable self-conditioning', metavar='BOOL',                     type=bool, default=False, show_default=True)
+
 
 @click.option('--xflip',         help='Enable dataset x-flips', metavar='BOOL',                     type=bool, default=False, show_default=True)
 
@@ -160,6 +162,7 @@ def main(**kwargs):
     elif opts.precond == 'edm':
         c.network_kwargs.class_name = 'training.networks.EDMPrecond'
         c.loss_kwargs.class_name = 'training.loss.EDMLoss'
+        c.loss_kwargs.self_cond = opts.self_cond
     elif opts.precond == 'cdm':
         assert opts.martingale_lambda > 0
         c.network_kwargs.class_name = 'training.networks.EDMPrecond'
@@ -264,7 +267,7 @@ def main(**kwargs):
         dnnlib.util.Logger(file_name=os.path.join(c.run_dir, 'log.txt'), file_mode='a', should_flush=True)
 
     # Train.
-    training_loop.training_loop(**c)
+    training_loop.training_loop(self_cond=opts.self_cond, **c)
 
 #----------------------------------------------------------------------------
 
